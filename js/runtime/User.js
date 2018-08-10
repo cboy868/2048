@@ -10,6 +10,12 @@ export class User {
         this.arcX = 5;
         this.arcY = 30;
         this.speed = 1;
+
+        let info = this.info();
+        if (info) {
+            this.headerImage = wx.createImage();
+            this.headerImage.src = info.headimgurl;
+        }
     }
 
     button() {
@@ -36,7 +42,8 @@ export class User {
     /**
      * 显示登录按扭
      */
-    showLogin() {
+    showLogin(callback) {
+        this.callback = callback;
         this.btn.show();
     }
 
@@ -70,6 +77,7 @@ export class User {
                             wx.setStorageSync('uInfo', res.umodal);
                             wx.setStorageSync('access_token', res.umodal.access_token);
                             this.hideLogin();
+                            this.callback();
                         }, {code: res.code, data: tapRes}, 'POST');
                     } else {
                         console.log('获取用户登录态失败！' + res.errMsg);
@@ -105,27 +113,22 @@ export class User {
         let image = wx.createImage();
         image.src = info.headimgurl;
 
-        let ctx = DataStore.getInstance().ctx2;
-        ctx.save();
+        let ctx = DataStore.getInstance().ctx;
         let artR = 40;
 
-        ctx.font = "15px April";
-        ctx.fillText('这里给点测试内容', 20, 115);
-
         image.onload = () => {
-
-
-
-
+            ctx.save();
+            ctx.font = "15px April";
+            ctx.fillText(info.nickname, 20, 115);
             let d =2 * artR;
             let cx = this.arcX + artR;
             let cy = this.arcY + artR;
             ctx.arc(cx, cy, artR, 0, 2 * Math.PI);
             ctx.clip();
             ctx.drawImage(image, this.arcX, this.arcY, d, d);
+            ctx.restore();
 
-
-            DataStore.getInstance().ctx.drawImage(ctx.canvas,0,0);
+            // DataStore.getInstance().ctx.drawImage(ctx.canvas,0,0);
             //
         //
         //     //
@@ -133,14 +136,14 @@ export class User {
         //     //
         //     // // 创建图片纹理
         //     // ctx.font = "15px April";
-        //     // ctx.fillText(info.nickname, 20, 115);
-        //     // // 绘制一个圆
+
+            // // 绘制一个圆
         //     // ctx.arc(this.arcX, this.arcY, 50, 0, 2 * Math.PI);
         //     // // 填充绘制的圆
         //     // ctx.fillStyle = pattern;
         //     // ctx.fill();
         };
-        ctx.restore();
+
     }
 
     /**

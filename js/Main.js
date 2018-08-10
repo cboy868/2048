@@ -2,6 +2,7 @@ import {ResourceLoader} from "./base/ResourceLoader.js";
 import {DataStore} from "./base/DataStore.js";
 import {Director} from "./Director.js";
 import {Request} from "./request/Request.js";
+import {User} from "./runtime/User.js";
 
 export class Main {
     constructor() {
@@ -17,38 +18,43 @@ export class Main {
         this.dataStore = DataStore.getInstance();
         this.director = Director.getInstance();
 
-        const loader = ResourceLoader.create();
-        loader.onLoaded(map => this.onResFirstLoaded(map));
+        this.user = new User();
+        if (!this.user.isLogin()){//没有登录，则先去登录
+            this.user.showLogin(()=>{
+                Request.getInfo((res)=>{
+                    // this.director.run(res);
+                    const loader = ResourceLoader.create();
+                    loader.onLoaded((map) => this.onResFirstLoaded(map,res));
+                });
+            });
+            return;
+        }
+
+        Request.getInfo((res)=>{
+            const loader = ResourceLoader.create();
+            loader.onLoaded((map) => this.onResFirstLoaded(map,res));
+        });
+
     }
 
-    onResFirstLoaded(map) {
+    onResFirstLoaded(map,res) {
         this.dataStore.canvas2 = this.canvas2;
         this.dataStore.canvas = this.canvas;
         this.dataStore.ctx = this.ctx;
         this.dataStore.ctx2 = this.ctx2;
         this.dataStore.res = map;
         this.director.cal();
-        this.init();
+        this.init(res);
     }
 
 
-    init() {
+    init(res) {
         this.registerEvent();
-
-        Request.getInfo((res)=>{
-            this.director.run(res);
-        });
-
+        this.director.run(res);
     }
 
     registerEvent() {
-        // this.canvas.addEventListener('mousedown', e => {
-        //     e.preventDefault();
-        //     this.director.moveRight();
-        // });
-
         let startX = 0, endX = 0, startY = 0, endY = 0;
-
         wx.onTouchStart(res => {
             startX = res.touches[0].clientX;
             startY = res.touches[0].clientY;
@@ -56,7 +62,6 @@ export class Main {
             this.dataStore.put('touchStartX', startX);
             this.dataStore.put('touchStartY', startY);
         });
-
         wx.onTouchEnd(res => {
             endX = res.changedTouches[0].clientX;
             endY = res.changedTouches[0].clientY;

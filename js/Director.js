@@ -2,10 +2,8 @@ import {DataStore} from "./base/DataStore.js";
 import {User} from "./runtime/User.js";
 import {Bg} from "./runtime/Bg";
 import {Background} from "./runtime/Background";
-import {Prop} from "./runtime/Prop";
 import {Container} from "./runtime/Container";
 import {Menu} from "./runtime/Menu";
-import {Header} from "./runtime/Header";
 
 export class Director {
 
