@@ -18,6 +18,12 @@ export class Sprite {
         this.height = height;
     }
 
+    setSrcY(srcY){
+        this.srcY = srcY;
+        return this;
+    }
+
+
     /**
      * 绘图
      */

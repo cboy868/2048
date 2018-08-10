@@ -9,6 +9,7 @@ export class Container {
         this.moveAble = false;
         this.dataStore = DataStore.getInstance();
         this.bestScore = score;
+        this.record = [];
         this.init();
     }
 
@@ -28,6 +29,7 @@ export class Container {
 
         this.arr[i1][j1].updateValue(2);
         this.arr[i2][j2].updateValue(2);
+        this.history();
     }
 
     draw() {
@@ -65,6 +67,14 @@ export class Container {
         this.dataStore.put('score', score);
     }
 
+    /**
+     * 选择移动方向
+     * @param target
+     */
+    move(target){
+        this[target]();
+        this.history();
+    }
     /**
      * 向下移动
      */
@@ -257,6 +267,8 @@ export class Container {
         }
         len = ableArr.length;
         if (len > 0) {
+
+
             index = Helper.getRandom(len);
             i = ableArr[index][0];
             j = ableArr[index][1];
@@ -268,6 +280,85 @@ export class Container {
 
         this.moveAble = false;
 
+    }
+
+    /**
+     * 操作历史，只记最后操作的10步
+     */
+    history(){
+        let numArr = [];
+        for (let i = 0; i < 4; i++) {
+            numArr[i] = [];
+            for (let j = 0; j < 4; j++) {
+                numArr[i][j] = this.arr[i][j].value;
+            }
+        }
+
+        let historyRecord = this.dataStore.get('historyRecord');
+
+
+        if (historyRecord.length>0 && historyRecord[0].toString() == numArr.toString()) {
+            return;
+        }
+
+        historyRecord.unshift(numArr);
+
+        if (historyRecord.length > 11) {
+            historyRecord.pop();
+        }
+        this.dataStore.put('historyRecord', historyRecord);
+        console.log(historyRecord);
+    }
+
+    /**
+     * 回撤到第num步
+     * @param num
+     */
+    undo(num){
+        let historyRecord = this.dataStore.get('historyRecord');
+        let length = historyRecord.length;
+        if (length <=1 ) {
+            return;
+        }
+        let step = num < length ? num : length-1;
+        for (let i = 0; i < 4; i++) {
+            for (let j = 0; j < 4; j++) {
+                this.arr[i][j].updateValue(historyRecord[step][i][j]);
+            }
+        }
+        let sliceStep = num < length ? num : length-1;
+        let newHistory;
+        if (sliceStep >= 1) {
+            newHistory = historyRecord.slice(sliceStep);
+            this.dataStore.put('historyRecord', newHistory);
+        }
+    }
+
+    /**
+     * 获取可以取消多少步
+     */
+    getCanUndoNum(){
+        let historyRecord = this.dataStore.get('historyRecord');
+        let length = historyRecord.length;
+        let arr = [];
+
+        if (length<=1) {
+            return false;
+        }
+
+        if (length > 1) {
+            arr.push('1步');
+        }
+
+        if (length > 5) {
+            arr.push('5步');
+        }
+
+        if (length > 10) {
+            arr.push('10步');
+        }
+
+        return arr;
     }
 
 }

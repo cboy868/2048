@@ -26,7 +26,7 @@ export class Director {
         if (!this.u) {//未登录状态，只显示一个背景
             return;
         }
-        this.backgroundSprite =  new Background(this.dataStore.ctx, this.dataStore.res.get('background'));
+        this.backgroundSprite = new Background(this.dataStore.ctx, this.dataStore.res.get('background'));
 
         let bottomY = this.dataStore.get('bottomY');
 
@@ -46,8 +46,9 @@ export class Director {
         wx.onShow((res) => {
             this.render();
         });
-        this.test();
+        // this.test();
     }
+
     /**
      * 重绘所有元素
      */
@@ -65,7 +66,7 @@ export class Director {
         this.numberSprite.draw();
     }
 
-    test(){
+    test() {
 
         // wx.showToast({
         //     title:'玩完了',
@@ -149,39 +150,81 @@ export class Director {
         this.dataStore.put('squareEdge', squareEdge);
         this.dataStore.put('spaceBetweenSquare', spaceBetweenSquare);//背景方块间距
         this.dataStore.put('squareSpaceEdge', squareSpaceEdge);//数字方块间距，2像素
+        this.dataStore.put('historyRecord', []);
 
     }
 
 
-
-    move() {
+    touchEvent() {
         let startX = this.dataStore.get('touchStartX');
         let startY = this.dataStore.get('touchStartY');
         let endX = this.dataStore.get('touchEndX');
         let endY = this.dataStore.get('touchEndY');
 
         let topY = this.dataStore.get('topSpace');
+        let menuTopY = this.dataStore.get('bottomY');
+        let menuBottomY = this.dataStore.get('menuBottomY');
 
-        if (startY < topY) return;//如果动作不在画板上，则不进行操作
+
+        if (startY < menuBottomY && startY > menuTopY) {//处理菜单的点击
+            this.undoMenu();
+            return;
+        }
+
+        if (startY < topY || startY > menuTopY) return;//如果动作不在画板上，则不进行操作
 
         let stepX = endX - startX;
         let stepY = endY - startY;
-
+        let target;
         if (Math.abs(stepX) >= Math.abs(stepY)) {//方向移动
-            if (stepX > 0) {
-                this.numberSprite.moveRight();
-            }
-            if (stepX <= 0) {
-                this.numberSprite.moveLeft();
-            }
+            target = stepX > 0 ? 'moveRight' : 'moveLeft';
         } else {
-            if (stepY > 0) {
-                this.numberSprite.moveDown();
-            }
-            if (stepY <= 0) {
-                this.numberSprite.moveUp();
-            }
+            target = stepY > 0 ? 'moveDown' : 'moveUp';
         }
+        this.numberSprite.move(target);
+
+        //处理undo显示状态
+        let canUndoNum = this.numberSprite.getCanUndoNum();
+        if (!canUndoNum) {
+            this.undoSprite.active = false;
+            return;
+        }
+        this.undoSprite.active = true;
+
         this.render();
+    }
+
+    undoMenu(){
+        let canUndoNum = this.numberSprite.getCanUndoNum();
+        if (!canUndoNum) {
+            return;
+        }
+        wx.showActionSheet({
+            itemList: canUndoNum,
+            success: (res) => {
+                let index = 0;
+                switch (res.tapIndex) {
+                    case 0:
+                        index = 1;
+                        break;
+                    case 1:
+                        index = 5;
+                        break;
+                    case 2:
+                        index = 10;
+                        break;
+                    default:
+                        break;
+                }
+                this.numberSprite.undo(index);
+                canUndoNum = this.numberSprite.getCanUndoNum();
+                if (!canUndoNum) {
+                    this.undoSprite.active = false;
+                } else {
+                    this.undoSprite.active = true;
+                }
+                this.render();
+            }
+        });
     }
 }

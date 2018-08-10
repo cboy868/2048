@@ -69,7 +69,7 @@ export class Main {
             this.dataStore.put('touchEndX', endX);
             this.dataStore.put('touchEndY', endY);
 
-            this.director.move();
+            this.director.touchEvent();
         });
     }
 }
