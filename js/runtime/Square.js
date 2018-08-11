@@ -45,9 +45,6 @@ export class Square {
     }
 
 
-
-
-
     backPosition() {
         let rate = this.backRate;
 
@@ -65,6 +62,12 @@ export class Square {
 
         let posNum = Math.log(this.value) / Math.log(2);
         return posNum ? posNum * step : 0;
+    }
+
+    swap(square){
+        let tmp = square.value;
+        square.value = this.value;
+        this.value = tmp;
     }
 
     moveCell(square) {

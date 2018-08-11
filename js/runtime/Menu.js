@@ -30,8 +30,6 @@ export class Menu extends Sprite {
         this.backStartX = backStartX;
         this.backItemWidth = backItemWidth;
         this.itemHeight = itemHeight;
-
-
     }
 
     draw() {
@@ -49,11 +47,6 @@ export class Menu extends Sprite {
 
         ctx.fillStyle = "#ff0000";
         ctx.font = "Bold 15px April";
-
-
-
-        console.log(this.active);
-
         ctx.fillText(this.value, this.backStartX + this.backItemWidth / 2, this.startY + this.itemHeight/2);
     }
 

@@ -4,6 +4,7 @@ import {Bg} from "./runtime/Bg";
 import {Background} from "./runtime/Background";
 import {Container} from "./runtime/Container";
 import {Menu} from "./runtime/Menu";
+import {Undo} from "./runtime/Undo";
 
 export class Director {
 
@@ -16,10 +17,14 @@ export class Director {
 
     constructor() {
         this.dataStore = DataStore.getInstance();
+
     }
 
     run(res) {
         console.log(res);
+
+        this.dataStore.put('propSwap', res.swap);
+        this.dataStore.put('propUndo', res.undo);
         //整体背景
         this.bgSprite = new Bg(this.dataStore.ctx, this.dataStore.res.get('bg'));
         this.u = this.user();
@@ -33,8 +38,11 @@ export class Director {
         // this.undoSprite = new Prop(this.dataStore.ctx, this.dataStore.res.get('undo'), 140, bottomY+20, res.undo);
         // this.restartSprite = new Prop(this.dataStore.ctx, this.dataStore.res.get('restart'), 200, bottomY+20, null);
 
-        this.undoSprite = new Menu(this.dataStore.ctx, this.dataStore.res.get('menu'), 0, res.undo);
-        this.swapSprite = new Menu(this.dataStore.ctx, this.dataStore.res.get('menu'), 1, res.swap);
+        this.undoSprite = new Undo(this.dataStore.ctx, this.dataStore.res.get('menu'));
+
+        let swapActive = res.swap > 0 ? true : false;
+        this.swapSprite = new Menu(this.dataStore.ctx, this.dataStore.res.get('menu'), swapActive);
+        // this.swapSprite = new Menu(this.dataStore.ctx, this.dataStore.res.get('menu'), 1, res.swap, swapActive);
         this.restartSprite = new Menu(this.dataStore.ctx, this.dataStore.res.get('menu'), 2, null);
         this.menuSprite = new Menu(this.dataStore.ctx, this.dataStore.res.get('menu'), 3, null);
 
@@ -164,37 +172,75 @@ export class Director {
         let topY = this.dataStore.get('topSpace');
         let menuTopY = this.dataStore.get('bottomY');
         let menuBottomY = this.dataStore.get('menuBottomY');
+        let canvasWidth = this.dataStore.get('canvasWidth');
+        let leftSpace = this.dataStore.get('leftSpace');
 
 
         if (startY < menuBottomY && startY > menuTopY) {//处理菜单的点击
-            this.undoMenu();
+            if (startX < canvasWidth / 4 && startX > leftSpace) {
+                this.menuUndo();
+            }
+            if (startX < canvasWidth / 2 && startX > canvasWidth / 4 + leftSpace) {
+                this.menuSwap();
+            }
             return;
         }
 
-        if (startY < topY || startY > menuTopY) return;//如果动作不在画板上，则不进行操作
-
-        let stepX = endX - startX;
-        let stepY = endY - startY;
-        let target;
-        if (Math.abs(stepX) >= Math.abs(stepY)) {//方向移动
-            target = stepX > 0 ? 'moveRight' : 'moveLeft';
-        } else {
-            target = stepY > 0 ? 'moveDown' : 'moveUp';
+        if (startY > topY && startY < menuTopY && this.inSwap == true) { //交换时事件
+            if (this.numberSprite.swap(startX, startY)==true)  {//这里还要请求网络
+                this.inSwap = false;
+                this.render();
+            }
+            return false;
         }
-        this.numberSprite.move(target);
 
-        //处理undo显示状态
-        let canUndoNum = this.numberSprite.getCanUndoNum();
-        if (!canUndoNum) {
-            this.undoSprite.active = false;
-            return;
+        if (startY > topY && startY < menuTopY && this.inSwap != true) {//如果动作不在画板上，则不进行操作
+            let stepX = endX - startX;
+            let stepY = endY - startY;
+            let target;
+            if (Math.abs(stepX) >= Math.abs(stepY)) {//方向移动
+                target = stepX > 0 ? 'moveRight' : 'moveLeft';
+            } else {
+                target = stepY > 0 ? 'moveDown' : 'moveUp';
+            }
+            this.numberSprite.move(target);
+
+            //处理undo显示状态
+            let canUndoNum = this.numberSprite.getCanUndoNum();
+            if (!canUndoNum) {
+                this.undoSprite.active = false;
+                return;
+            }
+            this.undoSprite.active = true;
+            this.render();
         }
-        this.undoSprite.active = true;
 
-        this.render();
+        //处理swap交换显示
+        // if (this.swapSprite.value > 0) {
+        //     this.swapSprite.active = true;
+        // } else {
+        //     this.swapSprite.active = false;
+        // }
+
     }
 
-    undoMenu(){
+    menuSwap() {
+        let ctx = this.dataStore.ctx;
+        ctx.fillStyle = "rgb(111,111,111)";
+        ctx.globalAlpha = 0.7;
+        let canvasWidth = this.dataStore.get('canvasWidth');
+        let canvasHeiglt = this.dataStore.get('canvasHeight');
+        let topY = this.dataStore.get('topSpace');
+        let bottomY = this.dataStore.get('bottomY');
+        ctx.beginPath();
+        ctx.rect(10, topY, canvasWidth - 20, canvasWidth - 20);
+        ctx.fill();
+        this.inSwap = true;
+
+
+    }
+
+    menuUndo() {
         let canUndoNum = this.numberSprite.getCanUndoNum();
         if (!canUndoNum) {
             return;
