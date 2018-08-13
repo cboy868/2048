@@ -39,27 +39,6 @@ export class Container {
                 this.arr[i][j].draw();
             }
         }
-        this.drawScore();
-    }
-
-    drawScore() {
-        let score = this.dataStore.get('score');
-        let img = this.dataStore.res.get('score');
-        let rate = this.dataStore.get('rate');
-
-        this.ctx.save();
-        this.ctx.drawImage(
-            img, 0, 0,
-            img.width, img.height,
-            200, 30,
-            img.width * rate, img.height * rate
-        );
-
-        this.ctx.fillStyle = "#ffffff";
-        this.ctx.font = "20px April";
-        this.ctx.fillText(score, 230, 90);
-        this.ctx.fillText(this.bestScore, 280, 90);
-        this.ctx.restore();
     }
 
     score(plus) {

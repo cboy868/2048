@@ -6,6 +6,7 @@ import {Container} from "./runtime/Container";
 import {Menu} from "./runtime/Menu";
 import {Undo} from "./runtime/Undo";
 import {Swap} from "./runtime/Swap";
+import {Helper} from "./lib/Helper";
 
 export class Director {
 
@@ -25,6 +26,7 @@ export class Director {
 
         this.dataStore.put('propSwap', res.swap);
         this.dataStore.put('propUndo', res.undo);
+        this.dataStore.put('bestScore', res.score);
         //整体背景
         this.bgSprite = new Bg(this.dataStore.ctx, this.dataStore.res.get('bg'));
         this.u = this.user();
@@ -62,10 +64,12 @@ export class Director {
     render() {
         // this.dataStore.ctx.clearRect(0, 0, this.dataStore.ctx.canvas.width, this.dataStore.ctx.canvas.height);
 
+
         this.bgSprite.draw();
         this.u.draw();
-
+        //
         this.backgroundSprite.draw();
+
         this.restartSprite.draw();
         this.swapSprite.draw();
         this.undoSprite.draw();

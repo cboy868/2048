@@ -8,7 +8,7 @@ export class User {
         this.showShareMenu();
         // this.onShare();
         this.arcX = 5;
-        this.arcY = 30;
+        this.arcY = 35;
         this.speed = 1;
 
         let info = this.info();
@@ -114,12 +114,15 @@ export class User {
         image.src = info.headimgurl;
 
         let ctx = DataStore.getInstance().ctx;
-        let artR = 40;
+        let rate = DataStore.getInstance().get('rate');
+        let artR = 40 * rate;
 
+
+        this.drawScore(artR*2+this.arcX+5);
         image.onload = () => {
             ctx.save();
-            ctx.font = "15px April";
-            ctx.fillText(info.nickname, 20, 115);
+            // ctx.font = "15px April";
+            // ctx.fillText(info.nickname, 20, 115);
             let d =2 * artR;
             let cx = this.arcX + artR;
             let cy = this.arcY + artR;
@@ -129,6 +132,33 @@ export class User {
             ctx.restore();
         };
     }
+
+    drawScore(startX) {
+        let dataStore = DataStore.getInstance();
+        let score = dataStore.get('score');
+        let bestScore = dataStore.get('bestScore');
+        let ctx = dataStore.ctx;
+        let rate = DataStore.getInstance().get('rate');
+        let str = '得分: ' + score;
+        let startY = 55;
+
+        let img = dataStore.res.get('score');
+
+        ctx.drawImage(
+            img, 0, 0,
+            img.width, img.height,
+            startX-30, 40,
+            108 , 40
+        );
+
+        ctx.save();
+        ctx.fillStyle = "#ffffff";
+        ctx.font = Math.ceil(22*rate) + "px April";
+        ctx.fillText(str, startX, startY);
+        ctx.fillText("最高分: " + bestScore, startX, startY+18);
+        ctx.restore();
+    }
+
 
     /**
      * 显示转发菜单
