@@ -6,7 +6,7 @@ export class User {
     constructor() {
         this.button();
         this.showShareMenu();
-        this.onShare();
+        // this.onShare();
         this.arcX = 5;
         this.arcY = 30;
         this.speed = 1;
@@ -127,23 +127,7 @@ export class User {
             ctx.clip();
             ctx.drawImage(image, this.arcX, this.arcY, d, d);
             ctx.restore();
-
-            // DataStore.getInstance().ctx.drawImage(ctx.canvas,0,0);
-            //
-        //
-        //     //
-        //     // let pattern = ctx.createPattern(image, "no-repeat");
-        //     //
-        //     // // 创建图片纹理
-        //     // ctx.font = "15px April";
-
-            // // 绘制一个圆
-        //     // ctx.arc(this.arcX, this.arcY, 50, 0, 2 * Math.PI);
-        //     // // 填充绘制的圆
-        //     // ctx.fillStyle = pattern;
-        //     // ctx.fill();
         };
-
     }
 
     /**
@@ -161,7 +145,7 @@ export class User {
     /**
      * 用户转发事件
      */
-    onShare() {
+    onShare(callback) {
         wx.onShareAppMessage((res) => {
             if (res.from === 'button') {
                 console.log("来自页面内转发按钮");
@@ -182,25 +166,27 @@ export class User {
                     wx.getShareInfo({
                         shareTicket: shareTickets[0],
                         success: (res) => {
-                            wx.login({
-                                success: (loginRes) => {
-                                    if (loginRes.code) {
-
-                                        Util.http(apis.share, function (res) {
-                                            console.log(res);
-                                        }, { code: loginRes.code, iv: res.iv, encryptedData: res.encryptedData, shareTicket: shareTickets[0]}, 'POST');
-
-                                    } else {
-                                        console.log('获取用户登录态失败！' + res.errMsg);
-                                    }
+                            wx.checkSession({
+                                success: () => {
+                                    this.share(res,'',shareTickets[0],callback);
                                 },
-                                fail: function () {
-
+                                fail:() => {
+                                    wx.login({
+                                        success: (loginRes) => {
+                                            if (loginRes.code) {
+                                                this.share(res,loginRes.code,shareTickets[0],callback);
+                                            } else {
+                                                console.log('获取用户登录态失败！' + res.errMsg);
+                                            }
+                                        },
+                                        fail: function () {
+                                            console.log('获取登录态失败');
+                                        }
+                                    });
                                 }
                             });
                         }
                     });
-                    console.log("转发成功", res);
                 },
                 fail: (res) => {
                     console.log("转发失败", res);
@@ -210,4 +196,30 @@ export class User {
         });
     }
 
+    /**
+     * 分享处理
+     * @param callback  分享后，影响数据，需要重绘
+     */
+    share(res, code, shareTicket, callback){
+        let dataStore = DataStore.getInstance();
+        Util.http(apis.share,  (res) => {
+            dataStore.put('propSwap', res.swap);
+            dataStore.put('propUndo', res.undo);
+            callback();
+        }, {iv: res.iv, encryptedData: res.encryptedData, shareTicket: shareTicket, code:code }, 'POST');
+    }
+
+
+    /**
+     * 使用道具
+     * @param type undo swap
+     */
+    consume(type='undo', callback){
+        let dataStore = DataStore.getInstance();
+        Util.http(apis.consume,  (res) => {
+            dataStore.put('propSwap', res.swap);
+            dataStore.put('propUndo', res.undo);
+            callback();
+        }, {type:type }, 'POST');
+    }
 }

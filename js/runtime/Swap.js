@@ -7,5 +7,11 @@ export class Swap extends Menu{
         let num = 1;
         let value = dataStore.get('propSwap');
         super(ctx, img, num, value, active);
+        this.dataStore = DataStore.getInstance();
+    }
+
+    draw(){
+        let value = this.dataStore.get('propSwap');
+        super.draw(value);
     }
 }

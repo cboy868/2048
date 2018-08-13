@@ -14,9 +14,10 @@ export class Menu extends Sprite {
 
         let bottomY = dataStore.get('bottomY');
         let rate = dataStore.get('rate');
+
+        // console.log(rate);
         dataStore.put('menuBottomY', bottomY + 10 + itemHeight);
         let startY = active ? itemHeight : 0;
-
         super(ctx, img,
             startX, startY,
             itemWidth, itemHeight,
@@ -24,15 +25,16 @@ export class Menu extends Sprite {
             backItemWidth, itemHeight*rate);
 
         this.active = active;
-        this.value = value;
+        // this.value = value;
         this.startY = bottomY + 10;
         this.srcStartY = startY;
         this.backStartX = backStartX;
         this.backItemWidth = backItemWidth;
         this.itemHeight = itemHeight;
+        this.rate = rate;
     }
 
-    draw() {
+    draw(value=0) {
         let ctx = DataStore.getInstance().ctx;
         if (this.active) {
             this.srcStartY = this.itemHeight;
@@ -43,11 +45,11 @@ export class Menu extends Sprite {
         }
         this.setSrcY(this.srcStartY);
         super.draw();
-        if (this.value == null) return;
+        if (value == null || value==0 || value=='undefined') return;
 
-        ctx.fillStyle = "#ff0000";
+        ctx.fillStyle = "#75a";
         ctx.font = "Bold 15px April";
-        ctx.fillText(this.value, this.backStartX + this.backItemWidth / 2, this.startY + this.itemHeight/2);
+        ctx.fillText(value, this.backStartX + 86*this.rate, this.startY + 40*this.rate);
     }
 
 

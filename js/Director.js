@@ -5,6 +5,7 @@ import {Background} from "./runtime/Background";
 import {Container} from "./runtime/Container";
 import {Menu} from "./runtime/Menu";
 import {Undo} from "./runtime/Undo";
+import {Swap} from "./runtime/Swap";
 
 export class Director {
 
@@ -21,7 +22,6 @@ export class Director {
     }
 
     run(res) {
-        console.log(res);
 
         this.dataStore.put('propSwap', res.swap);
         this.dataStore.put('propUndo', res.undo);
@@ -31,18 +31,17 @@ export class Director {
         if (!this.u) {//未登录状态，只显示一个背景
             return;
         }
+
+        this.u.onShare(()=>{
+            this.render();
+        });
         this.backgroundSprite = new Background(this.dataStore.ctx, this.dataStore.res.get('background'));
 
         let bottomY = this.dataStore.get('bottomY');
-
-        // this.undoSprite = new Prop(this.dataStore.ctx, this.dataStore.res.get('undo'), 140, bottomY+20, res.undo);
-        // this.restartSprite = new Prop(this.dataStore.ctx, this.dataStore.res.get('restart'), 200, bottomY+20, null);
-
         this.undoSprite = new Undo(this.dataStore.ctx, this.dataStore.res.get('menu'));
 
         let swapActive = res.swap > 0 ? true : false;
-        this.swapSprite = new Menu(this.dataStore.ctx, this.dataStore.res.get('menu'), swapActive);
-        // this.swapSprite = new Menu(this.dataStore.ctx, this.dataStore.res.get('menu'), 1, res.swap, swapActive);
+        this.swapSprite = new Swap(this.dataStore.ctx, this.dataStore.res.get('menu'), swapActive);
         this.restartSprite = new Menu(this.dataStore.ctx, this.dataStore.res.get('menu'), 2, null);
         this.menuSprite = new Menu(this.dataStore.ctx, this.dataStore.res.get('menu'), 3, null);
 
@@ -188,8 +187,10 @@ export class Director {
 
         if (startY > topY && startY < menuTopY && this.inSwap == true) { //交换时事件
             if (this.numberSprite.swap(startX, startY)==true)  {//这里还要请求网络
-                this.inSwap = false;
-                this.render();
+                this.u.consume('swap', ()=>{
+                    this.inSwap = false;
+                    this.render();
+                });
             }
             return false;
         }
@@ -214,14 +215,6 @@ export class Director {
             this.undoSprite.active = true;
             this.render();
         }
-
-        //处理swap交换显示
-        // if (this.swapSprite.value > 0) {
-        //     this.swapSprite.active = true;
-        // } else {
-        //     this.swapSprite.active = false;
-        // }
-
     }
 
     menuSwap() {
@@ -229,15 +222,11 @@ export class Director {
         ctx.fillStyle = "rgb(111,111,111)";
         ctx.globalAlpha = 0.7;
         let canvasWidth = this.dataStore.get('canvasWidth');
-        let canvasHeiglt = this.dataStore.get('canvasHeight');
         let topY = this.dataStore.get('topSpace');
-        let bottomY = this.dataStore.get('bottomY');
         ctx.beginPath();
         ctx.rect(10, topY, canvasWidth - 20, canvasWidth - 20);
         ctx.fill();
         this.inSwap = true;
-
-
     }
 
     menuUndo() {
@@ -262,14 +251,19 @@ export class Director {
                     default:
                         break;
                 }
-                this.numberSprite.undo(index);
-                canUndoNum = this.numberSprite.getCanUndoNum();
-                if (!canUndoNum) {
-                    this.undoSprite.active = false;
-                } else {
-                    this.undoSprite.active = true;
+
+                if (this.numberSprite.undo(index)) {
+                    this.u.consume('undo', ()=>{
+                        canUndoNum = this.numberSprite.getCanUndoNum();
+                        if (!canUndoNum) {
+                            this.undoSprite.active = false;
+                        } else {
+                            this.undoSprite.active = true;
+                        }
+                        this.render();
+                    });
                 }
-                this.render();
+
             }
         });
     }

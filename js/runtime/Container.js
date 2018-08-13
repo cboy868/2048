@@ -56,7 +56,7 @@ export class Container {
         );
 
         this.ctx.fillStyle = "#ffffff";
-        this.ctx.font = "30px April";
+        this.ctx.font = "20px April";
         this.ctx.fillText(score, 230, 90);
         this.ctx.fillText(this.bestScore, 280, 90);
         this.ctx.restore();
@@ -252,12 +252,7 @@ export class Container {
         let ableArr = [];
         if (this.moveAble != true) {
             console.log('不能增加新格子，请尝试其他方向移动！');
-
-            if (this.isFull() && this.canntMerge()) {
-                //这里给出提示
-
-                console.log('游戏结束，也就是说失败了');
-            }
+            this.isFinish();
             return;
         }
         for (i = 0; i < 4; i++) {
@@ -276,12 +271,31 @@ export class Container {
             j = ableArr[index][1];
             this.arr[i][j] = new Square(this.ctx, this.img, i, j, 2);
         } else {
+            this.isFinish();
             console.log('没有空闲的格子了！');
             return;
         }
 
         this.moveAble = false;
 
+    }
+
+    /**
+     * 游戏结束
+     */
+    isFinish(){
+        if (this.isFull() && this.canntMerge()) {
+            wx.showModal({
+                title:'游戏结束标题',
+                content:'内容',
+                showCancel:true,
+                cancelText:'结束游戏',
+                cancelColor:"#ff0000",
+                confirmText:"再玩一次"
+            })
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -295,21 +309,22 @@ export class Container {
                 numArr[i][j] = this.arr[i][j].value;
             }
         }
-
         let historyRecord = this.dataStore.get('historyRecord');
 
-
-        if (historyRecord.length > 0 && historyRecord[0].toString() == numArr.toString()) {
+        if (historyRecord.length > 0 && historyRecord[0]['cells'].toString() == numArr.toString()) {
             return;
         }
-
-        historyRecord.unshift(numArr);
+        let dataStore = DataStore.getInstance();
+        let data = {
+            'cells': numArr,
+            'score':dataStore.get('score')
+        };
+        historyRecord.unshift(data);
 
         if (historyRecord.length > 11) {
             historyRecord.pop();
         }
         this.dataStore.put('historyRecord', historyRecord);
-        console.log(historyRecord);
     }
 
     /**
@@ -320,20 +335,24 @@ export class Container {
         let historyRecord = this.dataStore.get('historyRecord');
         let length = historyRecord.length;
         if (length <= 1) {
-            return;
+            return false;
         }
         let step = num < length ? num : length - 1;
         for (let i = 0; i < 4; i++) {
             for (let j = 0; j < 4; j++) {
-                this.arr[i][j].updateValue(historyRecord[step][i][j]);
+                this.arr[i][j].updateValue(historyRecord[step]['cells'][i][j]);
             }
         }
+        let dataStore = DataStore.getInstance();
+        dataStore.put('score', historyRecord[step]['score']);
         let sliceStep = num < length ? num : length - 1;
         let newHistory;
         if (sliceStep >= 1) {
             newHistory = historyRecord.slice(sliceStep);
             this.dataStore.put('historyRecord', newHistory);
         }
+
+        return true;
     }
 
     /**
@@ -343,7 +362,6 @@ export class Container {
         let historyRecord = this.dataStore.get('historyRecord');
         let length = historyRecord.length;
         let arr = [];
-
         if (length <= 1) {
             return false;
         }
@@ -364,7 +382,6 @@ export class Container {
 
     swap(startX, startY){
         let [x,y] = Container.getClickCell(startX, startY);
-        console.log(x+' ' +y);
         this.swapItems.push([x,y]);
         if (this.swapItems.length == 2) {
             this.arr[x][y].swap(this.arr[this.swapItems[0][0]][this.swapItems[0][1]]);
