@@ -23,12 +23,10 @@ export class Director {
     }
 
     run(res) {
-
         this.dataStore.put('propSwap', res.swap);
         this.dataStore.put('propUndo', res.undo);
         this.dataStore.put('bestScore', res.score);
-        //整体背景
-        this.bgSprite = new Bg(this.dataStore.ctx, this.dataStore.res.get('bg'));
+
         this.u = this.user();
         if (!this.u) {//未登录状态，只显示一个背景
             return;
@@ -37,21 +35,20 @@ export class Director {
         this.u.onShare(()=>{
             this.render();
         });
-        this.backgroundSprite = new Background(this.dataStore.ctx, this.dataStore.res.get('background'));
 
-        let bottomY = this.dataStore.get('bottomY');
-        this.undoSprite = new Undo(this.dataStore.ctx, this.dataStore.res.get('menu'));
+        //整体背景
+        this.bgSprite = this.dataStore.get('bgSprite');
+        //方块背景
+        this.backgroundSprite = this.dataStore.get('backgroundSprite');
+        //数字方块
+        this.numberSprite = this.dataStore.get('numberSprite');
 
-        let swapActive = res.swap > 0 ? true : false;
-        this.swapSprite = new Swap(this.dataStore.ctx, this.dataStore.res.get('menu'), swapActive);
-        this.restartSprite = new Menu(this.dataStore.ctx, this.dataStore.res.get('menu'), 2, null);
-        this.menuSprite = new Menu(this.dataStore.ctx, this.dataStore.res.get('menu'), 3, null);
-
-        // //数字方块
-        this.numberSprite = new Container(this.dataStore.ctx, this.dataStore.res.get('number'), res.score);
+        this.undoSprite = this.dataStore.get('undoSprite');
+        this.swapSprite = this.dataStore.get('swapSprite');
+        // this.restartSprite = this.dataStore.get('restartSprite');
+        this.menuSprite = this.dataStore.get('menuSprite');
 
         this.render();
-
         wx.onShow((res) => {
             this.render();
         });
@@ -70,11 +67,13 @@ export class Director {
         //
         this.backgroundSprite.draw();
 
-        this.restartSprite.draw();
-        this.swapSprite.draw();
+        // this.restartSprite.draw();
         this.undoSprite.draw();
         this.menuSprite.draw();
         this.numberSprite.draw();
+        this.swapSprite.draw();
+        this.swapSprite.swapItemDraw();
+
     }
 
     test() {
@@ -179,22 +178,40 @@ export class Director {
         let leftSpace = this.dataStore.get('leftSpace');
 
 
+
+        if ((startY < topY || startY > menuTopY) && this.swapSprite.inSwap ==true) {
+            this.swapSprite.inSwap = false;
+            this.render();
+            return;
+        }
+
         if (startY < menuBottomY && startY > menuTopY) {//处理菜单的点击
-            if (startX < canvasWidth / 4 && startX > leftSpace) {
+            if (startX < canvasWidth / 4 && startX > leftSpace && this.undoSprite.active==true) {
                 this.menuUndo();
             }
-            if (startX < canvasWidth / 2 && startX > canvasWidth / 4 + leftSpace) {
-                this.menuSwap();
+            if (startX < canvasWidth / 2 && startX > canvasWidth / 4 + leftSpace && this.swapSprite.active == true) {
+                this.swapSprite.inSwap = true;
+                this.render();
+                // this.menuSwap();
             }
             return;
         }
 
-        if (startY > topY && startY < menuTopY && this.inSwap == true) { //交换时事件
+        if (startY > topY && startY < menuTopY && this.swapSprite.inSwap == true) { //交换时事件
             if (this.numberSprite.swap(startX, startY)==true)  {//这里还要请求网络
                 this.u.consume('swap', ()=>{
-                    this.inSwap = false;
+                    this.swapSprite.inSwap = false;
+                    this.swapSprite.update();
                     this.render();
+                    wx.showToast({
+                        title:'恭喜，字块交换成功',
+                        icon:'success',
+                        image:'images/icon_success.gif',
+                        duration:1000
+                    });
                 });
+            } else {
+                this.render();
             }
             return false;
         }
@@ -209,20 +226,28 @@ export class Director {
                 target = stepY > 0 ? 'moveDown' : 'moveUp';
             }
             this.numberSprite.move(target);
-
+            this.undoSprite.update();
             //处理undo显示状态
-            let canUndoNum = this.numberSprite.getCanUndoNum();
-            if (!canUndoNum) {
-                this.undoSprite.active = false;
-                return;
-            }
-            this.undoSprite.active = true;
+
             this.render();
+
+
+            // this.undoSprite.update();
+            // // let canUndoNum = this.numberSprite.getCanUndoNum();
+            // // if (!canUndoNum) {
+            // //     this.undoSprite.active = false;
+            // //     return;
+            // // }
+            // // this.undoSprite.active = false;
+            // this.render();
         }
     }
 
     menuSwap() {
+        if (this.inSwap==true) return;
         let ctx = this.dataStore.ctx;
+        this.render();
+        ctx.save();
         ctx.fillStyle = "rgb(111,111,111)";
         ctx.globalAlpha = 0.7;
         let canvasWidth = this.dataStore.get('canvasWidth');
@@ -230,6 +255,7 @@ export class Director {
         ctx.beginPath();
         ctx.rect(10, topY, canvasWidth - 20, canvasWidth - 20);
         ctx.fill();
+        ctx.restore();
         this.inSwap = true;
     }
 
@@ -265,6 +291,12 @@ export class Director {
                             this.undoSprite.active = true;
                         }
                         this.render();
+                        wx.showToast({
+                            title:'恭喜，撤销完成',
+                            icon:'success',
+                            image:'images/icon_success.gif',
+                            duration:1000
+                        });
                     });
                 }
 

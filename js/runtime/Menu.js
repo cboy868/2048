@@ -25,17 +25,16 @@ export class Menu extends Sprite {
             backItemWidth, itemHeight*rate);
 
         this.active = active;
-        // this.value = value;
         this.startY = bottomY + 10;
         this.srcStartY = startY;
         this.backStartX = backStartX;
-        this.backItemWidth = backItemWidth;
         this.itemHeight = itemHeight;
         this.rate = rate;
     }
 
     draw(value=0) {
         let ctx = DataStore.getInstance().ctx;
+
         if (this.active) {
             this.srcStartY = this.itemHeight;
             ctx.fillStyle = "#ff0000";

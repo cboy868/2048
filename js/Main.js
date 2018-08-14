@@ -3,6 +3,12 @@ import {DataStore} from "./base/DataStore.js";
 import {Director} from "./Director.js";
 import {Request} from "./request/Request.js";
 import {User} from "./runtime/User.js";
+import {Container} from "./runtime/Container";
+import {Bg} from "./runtime/Bg";
+import {Background} from "./runtime/Background";
+import {Undo} from "./runtime/Undo";
+import {Swap} from "./runtime/Swap";
+import {Menu} from "./runtime/Menu";
 
 export class Main {
     constructor() {
@@ -50,6 +56,16 @@ export class Main {
 
     init(res) {
         this.registerEvent();
+
+        this.dataStore.put('bgSprite', new Bg(this.dataStore.ctx, this.dataStore.res.get('bg')));
+        this.dataStore.put('backgroundSprite', new Background(this.dataStore.ctx, this.dataStore.res.get('background')));
+        this.dataStore.put('numberSprite', new Container(this.dataStore.ctx, this.dataStore.res.get('number'), res.score));
+
+        this.dataStore.put('undoSprite', new Undo(this.dataStore.ctx, this.dataStore.res.get('menu')));
+        this.dataStore.put('swapSprite', new Swap(this.dataStore.ctx, this.dataStore.res.get('menu')));
+        // this.dataStore.put('restartSprite', new Menu(this.dataStore.ctx, this.dataStore.res.get('menu'), 2, null));
+        this.dataStore.put('menuSprite', new Menu(this.dataStore.ctx, this.dataStore.res.get('menu'), 3, null));
+
         this.director.run(res);
     }
 

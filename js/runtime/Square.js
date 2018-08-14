@@ -8,6 +8,7 @@ export class Square {
         this.x = x;
         this.y = y;
         this.value = value;
+        this.sel = false;
 
         this.dataStore = DataStore.getInstance();
 
@@ -41,7 +42,17 @@ export class Square {
             left, top,//背景位置
             this.edge * rate, this.edge * rate//占背景长高
         );
+    }
 
+
+    /**
+     * 取某一方格的具体位置
+     * @returns {*[]}x,y,width,height
+     */
+    getPosition(){
+        let rate = this.backRate;
+        let [left, top] = this.backPosition();
+        return [left, top, this.edge*rate, this.edge*rate];
     }
 
 

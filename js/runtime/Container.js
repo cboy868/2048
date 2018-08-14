@@ -231,7 +231,6 @@ export class Container {
         let ableArr = [];
         if (this.moveAble != true) {
             console.log('不能增加新格子，请尝试其他方向移动！');
-            this.isFinish();
             return;
         }
         for (i = 0; i < 4; i++) {
@@ -243,18 +242,15 @@ export class Container {
         }
         len = ableArr.length;
         if (len > 0) {
-
-
             index = Helper.getRandom(len);
             i = ableArr[index][0];
             j = ableArr[index][1];
             this.arr[i][j] = new Square(this.ctx, this.img, i, j, 2);
         } else {
-            this.isFinish();
             console.log('没有空闲的格子了！');
             return;
         }
-
+        this.isFinish();
         this.moveAble = false;
 
     }
@@ -262,16 +258,16 @@ export class Container {
     /**
      * 游戏结束
      */
-    isFinish(){
+    isFinish() {
         if (this.isFull() && this.canntMerge()) {
             wx.showModal({
-                title:'游戏结束标题',
-                content:'内容',
-                showCancel:true,
-                cancelText:'结束游戏',
-                cancelColor:"#ff0000",
-                confirmText:"再玩一次"
-            })
+                title: '游戏结束标题',
+                content: '内容',
+                showCancel: true,
+                cancelText: '结束游戏',
+                cancelColor: "#ff0000",
+                confirmText: "再玩一次"
+            });
             return true;
         }
         return false;
@@ -296,7 +292,7 @@ export class Container {
         let dataStore = DataStore.getInstance();
         let data = {
             'cells': numArr,
-            'score':dataStore.get('score')
+            'score': dataStore.get('score')
         };
         historyRecord.unshift(data);
 
@@ -359,15 +355,32 @@ export class Container {
         return arr;
     }
 
-    swap(startX, startY){
-        let [x,y] = Container.getClickCell(startX, startY);
-        this.swapItems.push([x,y]);
-        if (this.swapItems.length == 2) {
-            this.arr[x][y].swap(this.arr[this.swapItems[0][0]][this.swapItems[0][1]]);
-            this.swapItems = [];
-            return true;
+    swap(startX, startY) {
+        let [x, y] = Container.getClickCell(startX, startY);
+
+        switch (this.swapItems.length) {
+            case 0:
+                this.swapItems.push([x,y]);
+                this.arr[x][y].sel=true;
+                return false;
+                // break;
+            case 1:
+                let first = this.swapItems[0];
+                this.arr[first[0]][first[1]].sel=false;
+                if (first[0] == x && first[1]==y) {
+                    this.swapItems = [];
+                    return false;
+                } else if(this.arr[x][y].value == this.arr[first[0]][first[1]].value){
+                    //选中的两个方块，值相等
+                    console.log('两个方块真相同');
+                    return false;
+                }else{
+                    this.arr[x][y].swap(this.arr[this.swapItems[0][0]][this.swapItems[0][1]]);
+                    this.swapItems = [];
+                    return true;
+                }
         }
-        return false;
+
     }
 
     static getClickCell(touchX, touchY) {
@@ -378,8 +391,8 @@ export class Container {
         let topY = dataStore.get('topSpace');
         let rate = dataStore.get('rate');
 
-        let x = Math.floor((touchX - leftSpace - halfSpace) / ((squareWidth + halfSpace * 2)*rate));
-        let y = Math.floor((touchY - topY - halfSpace) / ((squareWidth + halfSpace * 2)*rate));
+        let x = Math.floor((touchX - leftSpace - halfSpace) / ((squareWidth + halfSpace * 2) * rate));
+        let y = Math.floor((touchY - topY - halfSpace) / ((squareWidth + halfSpace * 2) * rate));
 
         return [x, y];
     }
