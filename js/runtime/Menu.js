@@ -34,7 +34,6 @@ export class Menu extends Sprite {
 
     draw(value=0) {
         let ctx = DataStore.getInstance().ctx;
-
         if (this.active) {
             this.srcStartY = this.itemHeight;
             ctx.fillStyle = "#ff0000";

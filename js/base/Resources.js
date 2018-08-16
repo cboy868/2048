@@ -3,5 +3,7 @@ export const Resources = [
     ['background', 'images/game_bg.png'],
     ['number', 'images/number.png'],
     ['score', 'images/scorebg.png'],
-    ['menu', 'images/menu.png']
+    ['menu', 'images/menu.png'],
+    ['btns', 'images/btns.png'],
+    ['guide', 'images/guide.png']
 ];

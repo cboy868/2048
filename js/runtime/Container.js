@@ -11,6 +11,8 @@ export class Container {
         this.bestScore = score;
         this.record = [];
         this.swapItems = [];
+        this.hasMove = false;
+        this.hasMerge = false;
         this.init();
     }
 
@@ -217,12 +219,14 @@ export class Container {
     moveCell(i, j, m, n) {
         this.arr[i][j].moveCell(this.arr[m][n]);
         this.moveAble = true;
+        this.hasMove = true;
     }
 
     mergeCell(i, j, m, n) {
         this.arr[i][j].mergeCell(this.arr[m][n]);
         this.score(this.arr[m][n].value);
         this.moveAble = true;
+        this.hasMerge = true;
     }
 
     newCell() {
@@ -373,6 +377,7 @@ export class Container {
                 } else if(this.arr[x][y].value == this.arr[first[0]][first[1]].value){
                     //选中的两个方块，值相等
                     console.log('两个方块真相同');
+                    this.swapItems = [];
                     return false;
                 }else{
                     this.arr[x][y].swap(this.arr[this.swapItems[0][0]][this.swapItems[0][1]]);

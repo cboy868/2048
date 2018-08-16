@@ -25,6 +25,28 @@ export class Helper {
         ctx.arcTo(x, y, x + w, y, r);
         ctx.closePath();
     }
+
+    static wrapText (ctx, x, y, maxWidth, lineHeight, text) {
+        if (typeof text != 'string' || typeof x != 'number' || typeof y != 'number') {
+            return;
+        }
+        // 字符分隔为数组
+        let arrText = text.split('');
+        let line = '';
+        for (let n = 0; n < arrText.length; n++) {
+            let testLine = line + arrText[n];
+            let metrics = ctx.measureText(testLine);
+            let testWidth = metrics.width;
+            if (testWidth > maxWidth && n > 0) {
+                ctx.fillText(line, x, y);
+                line = arrText[n];
+                y += lineHeight;
+            } else {
+                line = testLine;
+            }
+        }
+        ctx.fillText(line, x, y);
+    };
 }
 
 

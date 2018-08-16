@@ -20,18 +20,21 @@ export class User {
 
     button() {
         this.btn = wx.createUserInfoButton({
-            type: 'text',
+            type: 'image',
             text: '进入游戏',
+            // type:'text',
+            image:'images/start.png',
             style: {
-                left: 60,
+                left: 70,
                 top: 300,
-                width: 200,
-                height: 50,
+                width: 203,
+                height: 66,
                 backgroundColor: '#aa0000',
                 borderColor: '#000000',
                 borderRadius: 10,
                 textAlign: 'center',
-                fontSize: 20,
+                color:'white',
+                fontSize: 30,
                 lineHeight: 50
             }
         });

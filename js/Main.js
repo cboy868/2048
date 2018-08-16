@@ -9,17 +9,19 @@ import {Background} from "./runtime/Background";
 import {Undo} from "./runtime/Undo";
 import {Swap} from "./runtime/Swap";
 import {Menu} from "./runtime/Menu";
+import {Buttons} from "./runtime/Buttons";
 
 export class Main {
     constructor() {
         // this.canvas = document.getElementById('game_canvas');
         // this.ctx = this.canvas.getContext('2d');
 
+
         this.canvas = wx.createCanvas();
         this.ctx = this.canvas.getContext('2d');
 
-        this.canvas2 = wx.createCanvas();
-        this.ctx2 = this.canvas2.getContext('2d');
+        // this.canvas2 = wx.createCanvas();
+        // this.ctx2 = this.canvas2.getContext('2d');
 
         this.dataStore = DataStore.getInstance();
         this.director = Director.getInstance();
@@ -37,6 +39,10 @@ export class Main {
         }
 
         Request.getInfo((res)=>{
+            // let res = {};
+            // res.score = 10;
+            // res.swap = 2;
+            // res.undo = 2;
             const loader = ResourceLoader.create();
             loader.onLoaded((map) => this.onResFirstLoaded(map,res));
         });
@@ -44,30 +50,37 @@ export class Main {
     }
 
     onResFirstLoaded(map,res) {
-        this.dataStore.canvas2 = this.canvas2;
+        // this.dataStore.canvas2 = this.canvas2;
         this.dataStore.canvas = this.canvas;
         this.dataStore.ctx = this.ctx;
-        this.dataStore.ctx2 = this.ctx2;
+        // this.dataStore.ctx2 = this.ctx2;
         this.dataStore.res = map;
+        this.dataStore.director = this.director;
         this.director.cal();
-        this.init(res);
-    }
 
+        this.dataStore.put('propSwap', res.swap);
+        this.dataStore.put('propUndo', res.undo);
+        this.dataStore.put('bestScore', res.score);
+        this.dataStore.put('user', this.user);
 
-    init(res) {
         this.registerEvent();
-
-        this.dataStore.put('bgSprite', new Bg(this.dataStore.ctx, this.dataStore.res.get('bg')));
-        this.dataStore.put('backgroundSprite', new Background(this.dataStore.ctx, this.dataStore.res.get('background')));
-        this.dataStore.put('numberSprite', new Container(this.dataStore.ctx, this.dataStore.res.get('number'), res.score));
-
-        this.dataStore.put('undoSprite', new Undo(this.dataStore.ctx, this.dataStore.res.get('menu')));
-        this.dataStore.put('swapSprite', new Swap(this.dataStore.ctx, this.dataStore.res.get('menu')));
-        // this.dataStore.put('restartSprite', new Menu(this.dataStore.ctx, this.dataStore.res.get('menu'), 2, null));
-        this.dataStore.put('menuSprite', new Menu(this.dataStore.ctx, this.dataStore.res.get('menu'), 3, null));
-
-        this.director.run(res);
+        this.director.init();
     }
+
+
+    // init() {
+    //     this.dataStore.put('bgSprite', new Bg(this.dataStore.ctx, this.dataStore.res.get('bg')));
+    //     this.dataStore.put('backgroundSprite', new Background(this.dataStore.ctx, this.dataStore.res.get('background')));
+    //     this.dataStore.put('numberSprite', new Container(this.dataStore.ctx, this.dataStore.res.get('number')));
+    //
+    //     this.dataStore.put('undoSprite', new Undo(this.dataStore.ctx, this.dataStore.res.get('menu')));
+    //     this.dataStore.put('swapSprite', new Swap(this.dataStore.ctx, this.dataStore.res.get('menu')));
+    //     // this.dataStore.put('restartSprite', new Menu(this.dataStore.ctx, this.dataStore.res.get('menu'), 2, null));
+    //     this.dataStore.put('menuSprite', new Menu(this.dataStore.ctx, this.dataStore.res.get('menu'), 3, null));
+    //     this.dataStore.put('btnSprite', new Buttons(this.dataStore.ctx, this.dataStore.res.get('btns')));
+    //
+    //     this.director.run();
+    // }
 
     registerEvent() {
         let startX = 0, endX = 0, startY = 0, endY = 0;
@@ -85,7 +98,12 @@ export class Main {
             this.dataStore.put('touchEndX', endX);
             this.dataStore.put('touchEndY', endY);
 
+
+
             this.director.touchEvent();
         });
+
     }
+
+
 }
