@@ -1,4 +1,6 @@
 {
     "deviceOrientation": "portrait",
-    "showStatusBar":true
+    "showStatusBar":true,
+    "openDataContext": "js/openData"
+
 }

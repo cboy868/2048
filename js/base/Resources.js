@@ -5,5 +5,7 @@ export const Resources = [
     ['score', 'images/scorebg.png'],
     ['menu', 'images/menu.png'],
     ['btns', 'images/btns.png'],
-    ['guide', 'images/guide.png']
+    ['guide', 'images/guide.png'],
+
+    ['slide', 'images/icon_info.gif']
 ];

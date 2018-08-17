@@ -34,6 +34,7 @@ export class Director {
         this.dataStore.put('btnSprite', new Buttons(this.dataStore.ctx, this.dataStore.res.get('btns')));
 
         this.dataStore.put('guide', new Guide(this.dataStore.ctx, this.dataStore.res.get('guide')));
+        this.lastTime = Date.now();
 
         this.run();
     }
@@ -62,6 +63,7 @@ export class Director {
         this.btnSprite = this.dataStore.get('btnSprite');
         this.guide = this.dataStore.get('guide');
 
+        this.loop();
         this.render();
         wx.onShow(() => {
             this.render();
@@ -72,6 +74,7 @@ export class Director {
      * 重绘所有元素
      */
     render() {
+
         // this.dataStore.ctx.clearRect(0, 0, this.dataStore.ctx.canvas.width, this.dataStore.ctx.canvas.height);
         this.bgSprite.draw();
         this.u.draw();
@@ -83,8 +86,53 @@ export class Director {
         this.numberSprite.draw();
         this.swapSprite.draw();
         this.swapSprite.swapItemDraw();
+
+        if (this.guide.isSkill == true) {
+            // this.guide.slide(this.guide.moveAction);
+            // this.loop = requestAnimationFrame(()=>{
+            //
+            //     this.render()
+            // });
+        } else if (!isNaN(this.loop)) {
+            // cancelAnimationFrame(this.loop);
+            // // wx.showToast({
+            // //     title:'教程结束',
+            // //     icon:'success',
+            // //     // image:'images/edit.png',
+            // //     duration:1000
+            // // });
+            //
+            // console.log();
+            //
+            // console.log(this.guide.isSkill);
+            // this.render();
+        }
+
     }
 
+    loop(){
+        requestAnimationFrame(()=>{
+            this.loop();
+            let now = Date.now();
+            this.dataStore.put('deltaTime', now - this.lastTime);
+            this.lastTime = now;
+            if (this.guide.isSkill == true) {
+                this.render();
+                this.guide.slide(this.guide.moveAction);
+            }
+
+        });
+
+    }
+
+    // skill(){
+    //     // this.guide.skill();
+    //     this.render();
+    //     if (this.guide.isSkill == true) {
+    //         this.guide.slide(this.guide.moveAction);
+    //         requestAnimationFrame(()=>this.skill());
+    //     }
+    // }
     insc(){
         this.bgSprite.draw();
         this.guide.insc();
@@ -261,7 +309,24 @@ export class Director {
             } else {
                 target = stepY > 0 ? 'moveDown' : 'moveUp';
             }
-            this.numberSprite.move(target);
+
+            if (this.guide.isSkill == true) {
+                if (this.guide.moveAction != target) {
+                    wx.showToast({
+                        title:'请按指示方向移动方块',
+                        icon:'error',
+                        image:'images/icon_false.gif',
+                        duration:1000
+                    });
+                    return false;
+                }
+                console.log('坚听动作:'+this.guide.isSkill);
+                cancelAnimationFrame(this.loop);
+                this.guide.skill();
+            } else {
+                this.numberSprite.move(target);
+            }
+
 
             Audio.stop();
             if (this.numberSprite.hasMerge) {
@@ -326,6 +391,7 @@ export class Director {
     }
     touchMenu(startX, startY){
         let btn = this.btnSprite.getTouchBtn(startX, startY);
+        console.log(btn);
 
         if (!isNaN(btn)){
             switch (btn) {
@@ -337,6 +403,14 @@ export class Director {
                     this.btnSprite.isShow = false;
                     this.guide.isInsc = true;
                     this.insc();
+                    break;
+                case 2:
+                    this.btnSprite.isShow = false;
+                    this.guide.isSkill = true;
+                    console.log(this.guide.isSkill);
+                    this.guide.skillStep=0;
+                    this.guide.skill();
+                    this.render();
                     break;
                 case 3:
                     this.btnSprite.isShow = false;

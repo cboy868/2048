@@ -3,13 +3,7 @@ import {DataStore} from "./base/DataStore.js";
 import {Director} from "./Director.js";
 import {Request} from "./request/Request.js";
 import {User} from "./runtime/User.js";
-import {Container} from "./runtime/Container";
-import {Bg} from "./runtime/Bg";
-import {Background} from "./runtime/Background";
-import {Undo} from "./runtime/Undo";
-import {Swap} from "./runtime/Swap";
-import {Menu} from "./runtime/Menu";
-import {Buttons} from "./runtime/Buttons";
+
 
 export class Main {
     constructor() {
@@ -38,6 +32,8 @@ export class Main {
             return;
         }
 
+
+
         Request.getInfo((res)=>{
             // let res = {};
             // res.score = 10;
@@ -46,6 +42,8 @@ export class Main {
             const loader = ResourceLoader.create();
             loader.onLoaded((map) => this.onResFirstLoaded(map,res));
         });
+
+
 
     }
 
@@ -67,21 +65,6 @@ export class Main {
         this.director.init();
     }
 
-
-    // init() {
-    //     this.dataStore.put('bgSprite', new Bg(this.dataStore.ctx, this.dataStore.res.get('bg')));
-    //     this.dataStore.put('backgroundSprite', new Background(this.dataStore.ctx, this.dataStore.res.get('background')));
-    //     this.dataStore.put('numberSprite', new Container(this.dataStore.ctx, this.dataStore.res.get('number')));
-    //
-    //     this.dataStore.put('undoSprite', new Undo(this.dataStore.ctx, this.dataStore.res.get('menu')));
-    //     this.dataStore.put('swapSprite', new Swap(this.dataStore.ctx, this.dataStore.res.get('menu')));
-    //     // this.dataStore.put('restartSprite', new Menu(this.dataStore.ctx, this.dataStore.res.get('menu'), 2, null));
-    //     this.dataStore.put('menuSprite', new Menu(this.dataStore.ctx, this.dataStore.res.get('menu'), 3, null));
-    //     this.dataStore.put('btnSprite', new Buttons(this.dataStore.ctx, this.dataStore.res.get('btns')));
-    //
-    //     this.director.run();
-    // }
-
     registerEvent() {
         let startX = 0, endX = 0, startY = 0, endY = 0;
         wx.onTouchStart(res => {
@@ -97,13 +80,16 @@ export class Main {
 
             this.dataStore.put('touchEndX', endX);
             this.dataStore.put('touchEndY', endY);
-
-
-
             this.director.touchEvent();
         });
 
     }
 
+    loop(){
+        requestAnimationFrame(()=>this.loop());
+        let now = Date.now();
+        this.dataStore.put('deltaTime', now - this.lastTime);
+        this.lastTime = now;
+    }
 
 }
