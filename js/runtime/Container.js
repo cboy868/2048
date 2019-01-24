@@ -1,6 +1,7 @@
 import {Helper} from "../lib/Helper.js";
 import {Square} from "./Square.js";
 import {DataStore} from "../base/DataStore";
+import {Request} from "../request/Request";
 
 export class Container {
     constructor(ctx, img, score = 0) {
@@ -264,6 +265,7 @@ export class Container {
      */
     isFinish() {
         if (this.isFull() && this.canntMerge()) {
+            Request.upInfo(this.dataStore.get('score'));
             wx.showModal({
                 title: '游戏结束标题',
                 content: '内容',
@@ -288,7 +290,7 @@ export class Container {
                 numArr[i][j] = this.arr[i][j].value;
             }
         }
-        let historyRecord = this.dataStore.get('historyRecord');
+        let historyRecord = this.dataStore.get('historyRecord') || [];
 
         if (historyRecord.length > 0 && historyRecord[0]['cells'].toString() == numArr.toString()) {
             return;

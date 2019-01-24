@@ -5,20 +5,24 @@ export class Swap extends Menu{
     constructor(ctx, img) {
         let dataStore = DataStore.getInstance();
         const num = 1;
-
-        let value = dataStore.get('propSwap');
-        let active = value > 0 ? true : false;
-        super(ctx, img, num, value, active);
+        super(ctx, img, num);
         this.dataStore = dataStore;
         this.inSwap = false;
     }
 
     draw(){
-        let value = this.dataStore.get('propSwap');
-        super.draw(value);
-        if (this.inSwap == true) {
-            this.shadow();
+        let value = this.dataStore.get('gameInfo').swap;
+
+        if (value>0){
+            this.active = true;
+        } else {
+            this.active = false;
         }
+
+        super.draw(value);
+        // if (this.inSwap == true) {
+        //     this.shadow();
+        // }
     }
 
     shadow(){
@@ -33,7 +37,6 @@ export class Swap extends Menu{
         ctx.rect(10, topY, canvasWidth - 20, canvasWidth - 20);
         ctx.fill();
         ctx.restore();
-        this.inSwap = true;
     }
 
     swapItemDraw() {
@@ -43,6 +46,7 @@ export class Swap extends Menu{
         ctx.save();
         for (let item of swapItems) {
             let [x,y,width,height] = numberSprite.arr[item[0]][item[1]].getPosition();
+            console.log(width);
             let r = 3;
             numberSprite.arr[item[0]][item[1]].draw();
             ctx.beginPath();
@@ -53,14 +57,4 @@ export class Swap extends Menu{
         }
         ctx.restore();
     }
-
-    update(){
-        let value = this.dataStore.get('propSwap');
-        if (value>0) {
-            this.active = true;
-        } else {
-            this.active = false;
-        }
-    }
-
 }

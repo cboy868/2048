@@ -9,6 +9,15 @@ import {Swap} from "./runtime/Swap";
 import {Menu} from "./runtime/Menu";
 import {Buttons} from "./runtime/Buttons";
 import {Guide} from "./runtime/Guide";
+import {Scene} from "./Scene";
+import {Request} from "./request/Request";
+import Home from "./scene/Home";
+import Play from "./scene/Play";
+import SwapScene from "./scene/SwapScene";
+import UndoScene from "./scene/UndoScene";
+import MenuScene from "./scene/MenuScene";
+import InscScene from "./scene/InscScene";
+
 export class Director {
 
     static getInstance() {
@@ -23,177 +32,192 @@ export class Director {
     }
 
     init(){
+        this.dataStore.put('user', new User());
         this.dataStore.put('bgSprite', new Bg(this.dataStore.ctx, this.dataStore.res.get('bg')));
+        this.dataStore.put('btnSprite', new Buttons(this.dataStore.ctx, this.dataStore.res.get('btns')));
+        this.cal();
+
         this.dataStore.put('backgroundSprite', new Background(this.dataStore.ctx, this.dataStore.res.get('background')));
         this.dataStore.put('numberSprite', new Container(this.dataStore.ctx, this.dataStore.res.get('number')));
-
         this.dataStore.put('undoSprite', new Undo(this.dataStore.ctx, this.dataStore.res.get('menu')));
         this.dataStore.put('swapSprite', new Swap(this.dataStore.ctx, this.dataStore.res.get('menu')));
-        // this.dataStore.put('restartSprite', new Menu(this.dataStore.ctx, this.dataStore.res.get('menu'), 2, null));
         this.dataStore.put('menuSprite', new Menu(this.dataStore.ctx, this.dataStore.res.get('menu'), 3, null));
-        this.dataStore.put('btnSprite', new Buttons(this.dataStore.ctx, this.dataStore.res.get('btns')));
-
         this.dataStore.put('guide', new Guide(this.dataStore.ctx, this.dataStore.res.get('guide')));
-        this.lastTime = Date.now();
+        this.dataStore.put('audio',  new Audio());
 
-        this.run();
-    }
+        this.audio = this.dataStore.get('audio');
+        this.user = this.dataStore.get('user');
 
-    run() {
-        this.u = this.user();
-        if (!this.u) {//未登录状态，只显示一个背景
-            return;
+        this.user.onShare();
+
+        wx.onHide(()=>{
+            Request.upInfo(this.dataStore.get('score'));
+            this.audio.destroy();
+        });
+
+        if (this.user.isLogin()){
+            Request.getInfo((res)=>{
+                if (res.code == 0) {
+                    this.dataStore.put('gameInfo', res.data);
+                    wx.onShow(()=>{
+                        this.run();
+                    });
+                    this.run();
+                } else {
+                    wx.clearStorageSync();
+                    this.init();
+                }
+            });
+        } else {
+            this.dataStore.put('sceneFlag', 1);
+            this.run();
         }
 
-        this.u.onShare(()=>{
-            this.render();
-        });
-
-        //整体背景
-        this.bgSprite = this.dataStore.get('bgSprite');
-        //方块背景
-        this.backgroundSprite = this.dataStore.get('backgroundSprite');
-        //数字方块
-        this.numberSprite = this.dataStore.get('numberSprite');
-
-        this.undoSprite = this.dataStore.get('undoSprite');
-        this.swapSprite = this.dataStore.get('swapSprite');
-        // this.restartSprite = this.dataStore.get('restartSprite');
-        this.menuSprite = this.dataStore.get('menuSprite');
-        this.btnSprite = this.dataStore.get('btnSprite');
-        this.guide = this.dataStore.get('guide');
-
-        this.loop();
-        this.render();
-        wx.onShow(() => {
-            this.render();
+        wx.onShow(()=>{
+            // this.run();
         });
     }
 
-    /**
-     * 重绘所有元素
-     */
-    render() {
 
-        // this.dataStore.ctx.clearRect(0, 0, this.dataStore.ctx.canvas.width, this.dataStore.ctx.canvas.height);
-        this.bgSprite.draw();
-        this.u.draw();
-        //
-        this.backgroundSprite.draw();
+    run(){
+        if (this.dataStore.get('sceneFlag') == 1) {
+            this.showHome();
+        }
+        if (this.dataStore.get('sceneFlag') == 2) {
+            this.playGame();
+        }
 
-        this.undoSprite.draw();
-        this.menuSprite.draw();
-        this.numberSprite.draw();
-        this.swapSprite.draw();
-        this.swapSprite.swapItemDraw();
+        if (this.dataStore.get('sceneFlag') == 3) {
+            this.menu();
+        }
 
-        if (this.guide.isSkill == true) {
-            // this.guide.slide(this.guide.moveAction);
-            // this.loop = requestAnimationFrame(()=>{
-            //
-            //     this.render()
-            // });
-        } else if (!isNaN(this.loop)) {
-            // cancelAnimationFrame(this.loop);
-            // // wx.showToast({
-            // //     title:'教程结束',
-            // //     icon:'success',
-            // //     // image:'images/edit.png',
-            // //     duration:1000
-            // // });
-            //
-            // console.log();
-            //
-            // console.log(this.guide.isSkill);
-            // this.render();
+        if (this.dataStore.get('sceneFlag') == 4) {
+            this.undo();
+        }
+
+        if (this.dataStore.get('sceneFlag') == 5) {
+            this.swap();
+        }
+
+        if (this.dataStore.get('sceneFlag') == 6) {
+            this.insc();
         }
 
     }
 
-    loop(){
-        requestAnimationFrame(()=>{
-            this.loop();
-            let now = Date.now();
-            this.dataStore.put('deltaTime', now - this.lastTime);
-            this.lastTime = now;
-            if (this.guide.isSkill == true) {
-                this.render();
-                this.guide.slide(this.guide.moveAction);
-            }
-
-        });
-
+    showHome(){
+        this.home = new Home(this.dataStore.ctx);
     }
 
-    // skill(){
-    //     // this.guide.skill();
-    //     this.render();
-    //     if (this.guide.isSkill == true) {
-    //         this.guide.slide(this.guide.moveAction);
-    //         requestAnimationFrame(()=>this.skill());
+    playGame(){
+        let ctx = this.dataStore.ctx;
+        this.game = new Play(ctx);
+    }
+
+    undo(){
+        this.game = new UndoScene(this.dataStore.ctx);
+    }
+
+    swap(){
+        this.game = new SwapScene(this.dataStore.ctx);
+    }
+
+
+    menu(){
+        this.game = new MenuScene(this.dataStore.ctx);
+        // this.game.run();
+    }
+
+    insc(){
+        this.game = new InscScene(this.dataStore.ctx);
+        // this.game.run();
+    }
+    // init() {
+    //
+    //     this.dataStore.put('gameInfo', {'score':0,'swap':0,'undo':0});
+    //     this.dataStore.put('user', new User());
+    //     this.user = this.dataStore.get('user');
+    //
+    //     this.dataStore.put('bgSprite', new Bg(this.dataStore.ctx, this.dataStore.res.get('bg')));
+    //     this.dataStore.put('backgroundSprite', new Background(this.dataStore.ctx, this.dataStore.res.get('background')));
+    //     this.dataStore.put('numberSprite', new Container(this.dataStore.ctx, this.dataStore.res.get('number')));
+    //
+    //     this.dataStore.put('undoSprite', new Undo(this.dataStore.ctx, this.dataStore.res.get('menu')));
+    //     this.dataStore.put('swapSprite', new Swap(this.dataStore.ctx, this.dataStore.res.get('menu')));
+    //     // this.dataStore.put('restartSprite', new Menu(this.dataStore.ctx, this.dataStore.res.get('menu'), 2, null));
+    //     this.dataStore.put('menuSprite', new Menu(this.dataStore.ctx, this.dataStore.res.get('menu'), 3, null));
+    //
+    //
+    //
+    //
+    //     this.lastTime = Date.now();
+    //
+    //     if (this.user.isLogin()){
+    //         Request.getInfo((res)=>{
+    //             if (res.code == 0) {
+    //                 this.dataStore.put('gameInfo', res.data);
+    //                 this.run();
+    //             } else {
+    //                 wx.clearStorageSync({
+    //                     success : function(){
+    //                     },
+    //                     complete: ()=>{
+    //                     }
+    //                 });
+    //                 this.init();
+    //                 console.log("error:获取信息出错了");
+    //             }
+    //         });
+    //     } else {
+    //         this.run();
     //     }
     // }
-    insc(){
-        this.bgSprite.draw();
-        this.guide.insc();
-    }
+    //
 
-    test() {
-
-        // wx.showToast({
-        //     title:'玩完了',
-        //     icon:'success',
-        //     image:'images/edit.png',
-        //     duration:10000
-        // });
-        // wx.showModal({
-        //     title:'标题',
-        //     content:'内容',
-        //     showCancel:true,
-        //     cancelText:'结束游戏',
-        //     cancelColor:"#ff0000",
-        //     confirmText:"再玩一次"
-        // })
-
-        // wx.showLoading({
-        //     title:'骑上就好',
-        //     mask:true,
-        //     success:function(){
-        //
-        //     },
-        //     fail:function () {
-        //
-        //     }
-        // });
-
-        // wx.showActionSheet({
-        //     itemList:['abcde','123456'],
-        //     itemColor:"#008800",
-        //     success:function(){
-        //
-        //     },
-        //     fail:function () {
-        //
-        //     }
-        // })
-
-
-    }
-
-    /**
-     * 处理用户信息
-     */
-    user() {
-        let user = this.dataStore.get('user');
-
-        if (!user.isLogin()) {
-            user.showLogin();
-            return false;
-        }
-        return user;
-    }
-
-
+    //
+    // test() {
+    //
+    //     // wx.showToast({
+    //     //     title:'玩完了',
+    //     //     icon:'success',
+    //     //     image:'images/edit.png',
+    //     //     duration:10000
+    //     // });
+    //     // wx.showModal({
+    //     //     title:'标题',
+    //     //     content:'内容',
+    //     //     showCancel:true,
+    //     //     cancelText:'结束游戏',
+    //     //     cancelColor:"#ff0000",
+    //     //     confirmText:"再玩一次"
+    //     // })
+    //
+    //     // wx.showLoading({
+    //     //     title:'骑上就好',
+    //     //     mask:true,
+    //     //     success:function(){
+    //     //
+    //     //     },
+    //     //     fail:function () {
+    //     //
+    //     //     }
+    //     // });
+    //
+    //     // wx.showActionSheet({
+    //     //     itemList:['abcde','123456'],
+    //     //     itemColor:"#008800",
+    //     //     success:function(){
+    //     //
+    //     //     },
+    //     //     fail:function () {
+    //     //
+    //     //     }
+    //     // })
+    //
+    //
+    // }
+    //
+    //
     cal() {
         let leftSpace = 10;
         let topSpace = 100;
@@ -225,198 +249,120 @@ export class Director {
         this.dataStore.put('historyRecord', []);
 
     }
+    //
+    // touchEvent() {
+    //     let startX = this.dataStore.get('touchStartX');
+    //     let startY = this.dataStore.get('touchStartY');
+    //     let endX = this.dataStore.get('touchEndX');
+    //     let endY = this.dataStore.get('touchEndY');
+    //
+    //     let topY = this.dataStore.get('topSpace');
+    //     let menuBottomY = this.dataStore.get('menuBottomY');
+    //     let menuTopY = this.dataStore.get('menuTopY');
+    //     let canvasWidth = this.dataStore.get('canvasWidth');
+    //     let leftSpace = this.dataStore.get('leftSpace');
+    //     let rate = this.dataStore.get('rate');
+    //     let menuSpaceY = 19 * rate;
+    //     let menuSpaceX = 27 * rate;
+    //     let halfMenuSquare = 90*rate/2;
+    //
+    //     console.log(this.guide);
+    //
+    //     this.guide.beginY = this.guide.startY;
+    //
+    //     switch (this.scene.flag) {
+    //         case 1:
+    //             return;
+    //         case 2:
+    //             if (startY > topY && startY < menuTopY) {
+    //                 this.play(startX, startY, endX, endY);
+    //             }
+    //
+    //             if (startY < menuBottomY - menuSpaceY && startY > menuTopY + menuSpaceY) {
+    //                 this.menu(startX, halfMenuSquare);
+    //             }
+    //             break;
+    //         case 3:
+    //             if (startY < topY || startY > menuTopY) {
+    //                 this.dataStore.put('sceneFlag', 2);
+    //                 this.scene.render();
+    //             }
+    //
+    //             if (this.touchMenu(startX, startY) === false) {
+    //                 console.log(1234);
+    //                 this.dataStore.put('sceneFlag', 2);
+    //                 this.scene.render();
+    //             }
+    //             break;
+    //         case 4:
+    //             break;
+    //         case 5:
+    //             if (startY > topY && startY < menuTopY) {
+    //                 this.swap(startX, startY);
+    //             }
+    //             if (startY < topY || startY > menuTopY) {
+    //                 this.swapSprite.inSwap = false;
+    //                 this.dataStore.put('sceneFlag', 2);
+    //                 this.scene.render();
+    //                 return;
+    //             }
+    //             break;
+    //         case 6://skill
+    //             if (startY > topY && startY < menuTopY) {
+    //                 this.guider(startX, startY, endX, endY);
+    //             }
+    //
+    //             if (startY < menuBottomY - menuSpaceY && startY > menuTopY + menuSpaceY) {
+    //                 this.menu(startX, halfMenuSquare);
+    //             }
+    //             break;
+    //         case 7:
+    //             if (endX > 10 && endX < 110 && endY>23 && endY<63) {
+    //                 this.dataStore.put('sceneFlag', 2);
+    //                 this.scene.render();
+    //             }
+    //             break;
+    //         default:
+    //             if (startY < topY || startY > menuTopY) {
+    //                 this.swapSprite.inSwap = false;
+    //                 this.dataStore.put('sceneFlag', 2);
+    //                 this.scene.render();
+    //                 return;
+    //             }
+    //     }
+    // }
+    //
 
+    //
+    // guider(startX, startY, endX, endY) {
+    //
+    //     let stepX = endX - startX;
+    //     let stepY = endY - startY;
+    //     let target;
+    //
+    //     if (Math.abs(stepX) >= Math.abs(stepY)) {//方向移动
+    //         if (Math.abs(stepX) < 10) return;
+    //         target = stepX > 0 ? 'moveRight' : 'moveLeft';
+    //     } else {
+    //         if (Math.abs(stepY) < 10) return;
+    //         target = stepY > 0 ? 'moveDown' : 'moveUp';
+    //     }
+    //
+    //     if (this.guide.moveAction != target) {
+    //         wx.showToast({
+    //             title:'请按指示方向移动方块',
+    //             icon:'error',
+    //             image:'images/icon_false.gif',
+    //             duration:1000
+    //         });
+    //         return false;
+    //     }
+    //     this.guide.skill();
+    //     this.undoSprite.update();
+    //     //处理undo显示状态
+    //
+    //     this.run();
+    // }
+    //
 
-    touchEvent() {
-        let startX = this.dataStore.get('touchStartX');
-        let startY = this.dataStore.get('touchStartY');
-        let endX = this.dataStore.get('touchEndX');
-        let endY = this.dataStore.get('touchEndY');
-
-        let topY = this.dataStore.get('topSpace');
-        let menuTopY = this.dataStore.get('bottomY');
-        let menuBottomY = this.dataStore.get('menuBottomY');
-        let canvasWidth = this.dataStore.get('canvasWidth');
-        let leftSpace = this.dataStore.get('leftSpace');
-
-
-        if ((startY < topY || startY > menuTopY) && this.swapSprite.inSwap ==true) {
-            this.swapSprite.inSwap = false;
-            this.render();
-            return;
-        }
-
-
-        if (this.guide.isInsc == true) {
-            if (endX > 10 && endX < 110 && endY>23 && endY<63) {
-                this.guide.isInsc = false;
-                this.render();
-            }
-            return;
-        }
-
-
-        if (this.btnSprite.isShow == true) {
-            this.touchMenu(endX, endY);
-            return;
-        }
-
-        if (startY < menuBottomY && startY > menuTopY) {//处理菜单的点击
-            if (startX < canvasWidth / 4 && startX > leftSpace && this.undoSprite.active==true) {
-                this.menuUndo();
-            }
-            if (startX < canvasWidth / 2 && startX > canvasWidth / 4 + leftSpace && this.swapSprite.active == true) {
-                this.swapSprite.inSwap = true;
-                this.render();
-                // this.menuSwap();
-            }
-
-            if (startX < canvasWidth && startX > (3*canvasWidth) / 4 + leftSpace) {
-                this.render();
-                this.btnSprite.isShow = true;
-                this.btnSprite.halfWay();
-            }
-            return;
-        }
-
-
-
-        if (startY > topY && startY < menuTopY && this.swapSprite.inSwap == true) { //交换时事件
-            if (this.numberSprite.swap(startX, startY)==true)  {//这里还要请求网络
-                this.u.consume('swap', ()=>{
-                    this.swapSprite.inSwap = false;
-                    this.swapSprite.update();
-                    this.render();
-                    wx.showToast({
-                        title:'恭喜，字块交换成功',
-                        icon:'success',
-                        image:'images/icon_success.gif',
-                        duration:1000
-                    });
-                });
-            } else {
-                this.render();
-            }
-            return false;
-        }
-
-        if (startY > topY && startY < menuTopY && this.swapSprite.inSwap != true) {//如果动作不在画板上，则不进行操作
-            let stepX = endX - startX;
-            let stepY = endY - startY;
-            let target;
-            if (Math.abs(stepX) >= Math.abs(stepY)) {//方向移动
-                target = stepX > 0 ? 'moveRight' : 'moveLeft';
-            } else {
-                target = stepY > 0 ? 'moveDown' : 'moveUp';
-            }
-
-            if (this.guide.isSkill == true) {
-                if (this.guide.moveAction != target) {
-                    wx.showToast({
-                        title:'请按指示方向移动方块',
-                        icon:'error',
-                        image:'images/icon_false.gif',
-                        duration:1000
-                    });
-                    return false;
-                }
-                console.log('坚听动作:'+this.guide.isSkill);
-                cancelAnimationFrame(this.loop);
-                this.guide.skill();
-            } else {
-                this.numberSprite.move(target);
-            }
-
-
-            Audio.stop();
-            if (this.numberSprite.hasMerge) {
-                Audio.merge();
-                this.numberSprite.hasMerge = false;
-            } else if (this.numberSprite.hasMove) {
-                Audio.move();
-                this.numberSprite.hasMove = false;
-            }
-
-            this.undoSprite.update();
-            //处理undo显示状态
-
-            this.render();
-        }
-    }
-
-
-    menuUndo() {
-        let canUndoNum = this.numberSprite.getCanUndoNum();
-        if (!canUndoNum) {
-            return;
-        }
-        wx.showActionSheet({
-            itemList: canUndoNum,
-            success: (res) => {
-                let index = 0;
-                switch (res.tapIndex) {
-                    case 0:
-                        index = 1;
-                        break;
-                    case 1:
-                        index = 5;
-                        break;
-                    case 2:
-                        index = 10;
-                        break;
-                    default:
-                        break;
-                }
-
-                if (this.numberSprite.undo(index)) {
-                    this.u.consume('undo', ()=>{
-                        canUndoNum = this.numberSprite.getCanUndoNum();
-                        if (!canUndoNum) {
-                            this.undoSprite.active = false;
-                        } else {
-                            this.undoSprite.active = true;
-                        }
-                        this.render();
-                        wx.showToast({
-                            title:'恭喜，撤销完成',
-                            icon:'success',
-                            image:'images/icon_success.gif',
-                            duration:1000
-                        });
-                    });
-                }
-
-            }
-        });
-    }
-    touchMenu(startX, startY){
-        let btn = this.btnSprite.getTouchBtn(startX, startY);
-        console.log(btn);
-
-        if (!isNaN(btn)){
-            switch (btn) {
-                case 0:
-                    this.btnSprite.isShow = false;
-                    this.init();
-                    break;
-                case 1:
-                    this.btnSprite.isShow = false;
-                    this.guide.isInsc = true;
-                    this.insc();
-                    break;
-                case 2:
-                    this.btnSprite.isShow = false;
-                    this.guide.isSkill = true;
-                    console.log(this.guide.isSkill);
-                    this.guide.skillStep=0;
-                    this.guide.skill();
-                    this.render();
-                    break;
-                case 3:
-                    this.btnSprite.isShow = false;
-                    this.run();
-                    break;
-            }
-        }
-    }
 }

@@ -1,3 +1,5 @@
+import {DataStore} from "./DataStore";
+
 export class Sprite {
     constructor(ctx = null,
                 img = null,
@@ -23,7 +25,9 @@ export class Sprite {
         return this;
     }
 
-
+    static getImage(key) {
+        return DataStore.getInstance().res.get(key);
+    }
     /**
      * 绘图
      */

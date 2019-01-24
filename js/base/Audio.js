@@ -9,21 +9,24 @@ export class Audio {
 
     constructor() {
         this.audio = wx.createInnerAudioContext();
-    }
-    static merge(){
-        let audio = Audio.getInstance();
-        audio.audio.src = 'res/merge.mp3';
-        audio.audio.play();
+        this.audio.volume = 0.2;
     }
 
-    static move(){
-        let audio = Audio.getInstance();
-        audio.audio.src = 'res/move.mp3';
-        audio.audio.play();
+    merge(){
+        this.audio.src='res/merge.mp3';
+        this.audio.play();
     }
 
-    static stop(){
-        let audio = Audio.getInstance();
-        audio.audio.stop();
+    move(){
+        this.audio.src = 'res/move.mp3';
+        this.audio.play();
+    }
+
+    stop(){
+        this.audio.stop();
+    }
+
+    destroy(){
+        this.audio.destroy();
     }
 }

@@ -1,3 +1,5 @@
+import {DataStore} from "../base/DataStore";
+
 export class Helper {
     static getRandom(n) {
         return Math.floor(Math.random() * n)
@@ -47,6 +49,25 @@ export class Helper {
         }
         ctx.fillText(line, x, y);
     };
+
+    /**
+     * 判断点击是否在某一范围
+     */
+    static clickIn(touchX, touchY, startX, startY, width, height){
+        if (touchX > startX && touchX <startX + width && touchY > startY && touchY < startY + height) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * 向开放域发送消息
+     */
+    static postMessage(type, data){
+        let openDataContext = wx.getOpenDataContext();
+        data.type = type;
+        openDataContext.postMessage(data);
+    }
 }
 
 

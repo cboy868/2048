@@ -16,7 +16,7 @@ export class Request {
         let url = apis.get_info;
         Util.http(url, (res) => {
             callBack(res);
-            dataStore.put('gameInfo', res);
+            dataStore.put('gameInfo', res.data);
         });
     }
 
@@ -27,7 +27,11 @@ export class Request {
     static upInfo(score){
         let url = apis.up_info;
         Util.http(url, (res) => {
-            dataStore.put('gameInfo', res);
+            if (res.code == 0) {
+                dataStore.put('gameInfo', res.data);
+            } else {
+                console.log("上传游戏信息出错了");
+            }
         },{score:score}, 'POST');
     }
 }

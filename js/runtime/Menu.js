@@ -16,7 +16,9 @@ export class Menu extends Sprite {
         let rate = dataStore.get('rate');
 
         // console.log(rate);
-        dataStore.put('menuBottomY', bottomY + 10 + itemHeight);
+
+        dataStore.put('menuTopY', bottomY + 10);
+        dataStore.put('menuBottomY', bottomY + 10 + itemHeight*rate);
         let startY = active ? itemHeight : 0;
         super(ctx, img,
             startX, startY,
@@ -41,7 +43,8 @@ export class Menu extends Sprite {
             this.srcStartY=0;
             ctx.fillStyle = "#00ff00";
         }
-        this.setSrcY(this.srcStartY);
+        this.srcY = this.srcStartY;
+        // this.setSrcY(this.srcStartY);
         super.draw();
         if (value == null || value==0 || value=='undefined') return;
 

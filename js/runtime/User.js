@@ -4,7 +4,7 @@ import {DataStore} from "../base/DataStore.js";
 
 export class User {
     constructor() {
-        this.button();
+        // this.button();
         this.showShareMenu();
         // this.onShare();
         this.arcX = 5;
@@ -18,36 +18,47 @@ export class User {
         }
     }
 
-    button() {
-        this.btn = wx.createUserInfoButton({
-            type: 'image',
-            text: '进入游戏',
-            // type:'text',
-            image:'images/start.png',
-            style: {
-                left: 70,
-                top: 300,
-                width: 203,
-                height: 66,
-                backgroundColor: '#aa0000',
-                borderColor: '#000000',
-                borderRadius: 10,
-                textAlign: 'center',
-                color:'white',
-                fontSize: 30,
-                lineHeight: 50
-            }
-        });
-        this.onTap();
-        this.btn.hide();
-    }
+    // button() {
+    //     this.btn = wx.createUserInfoButton({
+    //         type: 'image',
+    //         text: '进入游戏',
+    //         // type:'text',
+    //         image:'images/start.png',
+    //         style: {
+    //             left: 70,
+    //             top: 300,
+    //             width: 203,
+    //             height: 66,
+    //             backgroundColor: '#aa0000',
+    //             borderColor: '#000000',
+    //             borderRadius: 10,
+    //             textAlign: 'center',
+    //             color:'white',
+    //             fontSize: 30,
+    //             lineHeight: 50
+    //         }
+    //     });
+    //     this.onTap();
+    //     this.btn.hide();
+    // }
 
     /**
      * 显示登录按扭
      */
-    showLogin(callback) {
-        this.callback = callback;
+    showLogin(x,y,width,height,callback) {
+        this.btn = wx.createUserInfoButton({
+            type: 'image',
+            image:'images/start.png',
+            style: {
+                left: x,
+                top: y,
+                width: width,
+                height: height,
+            }
+        });
         this.btn.show();
+        this.onTap();
+        this.callback = callback;
     }
 
     /**
@@ -64,7 +75,6 @@ export class User {
     isLogin() {
         return this.info() ? true : false;
     }
-
     /**
      * 触发按扭点击
      * @param btn
@@ -77,10 +87,12 @@ export class User {
                     if (res.code) {
                         let url = apis.login;
                         Util.http(url, (res) => {
-                            wx.setStorageSync('uInfo', res.umodal);
-                            wx.setStorageSync('access_token', res.umodal.access_token);
-                            this.hideLogin();
-                            this.callback();
+                            if (res.code == 0) {
+                                wx.setStorageSync('uInfo', res.data.umodal);
+                                wx.setStorageSync('access_token', res.data.umodal.access_token);
+                                this.hideLogin();
+                                this.callback();
+                            }
                         }, {code: res.code, data: tapRes}, 'POST');
                     } else {
                         console.log('获取用户登录态失败！' + res.errMsg);
@@ -89,8 +101,7 @@ export class User {
                 fail: function () {//未登录时，需要用户先登录
                     console.log('非登录态' + res.errMsg);
                 },
-                complete: function () {
-
+                complete:  () =>{
                 }
             });
         })
@@ -104,7 +115,7 @@ export class User {
     info() {
         let info = wx.getStorageSync('uInfo');
         if (!info) {
-            this.showLogin();
+            // this.showLogin();
             return false;
         }
         return info;
@@ -120,46 +131,63 @@ export class User {
         let rate = DataStore.getInstance().get('rate');
         let artR = 40 * rate;
 
+        let offCtx = DataStore.getInstance().offCtx;
 
         this.drawScore(artR*2+this.arcX+5);
         image.onload = () => {
-            ctx.save();
-            // ctx.font = "15px April";
-            // ctx.fillText(info.nickname, 20, 115);
+            offCtx.save();
             let d =2 * artR;
             let cx = this.arcX + artR;
             let cy = this.arcY + artR;
-            ctx.arc(cx, cy, artR, 0, 2 * Math.PI);
-            ctx.clip();
-            ctx.drawImage(image, this.arcX, this.arcY, d, d);
-            ctx.restore();
+            offCtx.arc(cx, cy, artR, 0, 2 * Math.PI);
+            offCtx.clip();
+            offCtx.drawImage(image, this.arcX, this.arcY, d, d);
+            ctx.drawImage(offCtx.canvas, 0, 0);
+            offCtx.restore();
+
         };
+
+        // this.drawScore(artR*2+this.arcX+5);
+        // image.onload = () => {
+        //     ctx.save();
+        //     let d =2 * artR;
+        //     let cx = this.arcX + artR;
+        //     let cy = this.arcY + artR;
+        //     ctx.arc(cx, cy, artR, 0, 2 * Math.PI);
+        //     ctx.clip();
+        //     ctx.drawImage(image, this.arcX, this.arcY, d, d);
+        //     ctx.restore();
+        // };
     }
 
     drawScore(startX) {
         let dataStore = DataStore.getInstance();
         let score = dataStore.get('score');
-        let bestScore = dataStore.get('bestScore');
-        let ctx = dataStore.ctx;
+        let bestScore = dataStore.get('gameInfo').score;
+        // let ctx = dataStore.ctx;
         let rate = DataStore.getInstance().get('rate');
         let str = '得分: ' + score;
+        bestScore = bestScore > score ? bestScore : score;
+        let bestScoreStr = '最高分:' + bestScore;
         let startY = 55;
 
-        let img = dataStore.res.get('score');
+        let offCtx = dataStore.offCtx;
+        let fontWidth = offCtx.measureText(bestScoreStr).width + 20;
 
-        ctx.drawImage(
-            img, 0, 0,
-            img.width, img.height,
-            startX-30, 40,
-            108 , 40
-        );
+        offCtx.beginPath();
+        offCtx.lineCap="round";
+        offCtx.lineWidth = 40;
+        offCtx.moveTo(startX-5,60);
+        offCtx.lineTo(startX+fontWidth,60);
+        offCtx.strokeStyle="#2656C2";
+        offCtx.stroke();
 
-        ctx.save();
-        ctx.fillStyle = "#ffffff";
-        ctx.font = Math.ceil(22*rate) + "px April";
-        ctx.fillText(str, startX, startY);
-        ctx.fillText("最高分: " + bestScore, startX, startY+18);
-        ctx.restore();
+        offCtx.save();
+        offCtx.fillStyle = "#ffffff";
+        offCtx.font = Math.ceil(22*rate) + "px April";
+        offCtx.fillText(str, startX, startY);
+        offCtx.fillText(bestScoreStr, startX, startY+18);
+        offCtx.restore();
     }
 
 
@@ -222,6 +250,7 @@ export class User {
                     });
                 },
                 fail: (res) => {
+                    DataStore.getInstance().director.run();
                     console.log("转发失败", res);
                 }
             }
@@ -236,9 +265,13 @@ export class User {
     share(res, code, shareTicket, callback){
         let dataStore = DataStore.getInstance();
         Util.http(apis.share,  (res) => {
-            dataStore.put('propSwap', res.swap);
-            dataStore.put('propUndo', res.undo);
-            callback();
+            if (res.code == 0) {
+                dataStore.put('gameInfo', res.data);
+                // callback();
+            } else {
+                console.log("error:分享出错了");
+            }
+            dataStore.director.run();
         }, {iv: res.iv, encryptedData: res.encryptedData, shareTicket: shareTicket, code:code }, 'POST');
     }
 
@@ -250,9 +283,11 @@ export class User {
     consume(type='undo', callback){
         let dataStore = DataStore.getInstance();
         Util.http(apis.consume,  (res) => {
-            dataStore.put('propSwap', res.swap);
-            dataStore.put('propUndo', res.undo);
-            callback();
+            if (res.code == 0) {
+                dataStore.put('gameInfo', res.data);
+                callback();
+            }
+
         }, {type:type }, 'POST');
     }
 }
